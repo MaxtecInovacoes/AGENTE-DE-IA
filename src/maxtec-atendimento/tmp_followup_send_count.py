@@ -1,0 +1,24 @@
+import os
+from pathlib import Path
+import requests
+
+env_path = Path('.').resolve() / '.env'
+with env_path.open() as handle:
+    for line in handle:
+        line=line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key,value=line.split('=',1)
+        os.environ.setdefault(key.strip(), value.strip())
+MATON_API_KEY=os.environ['MATON_API_KEY']
+spreadsheet_id='1Basl2MvOHd0TvA-8yVwRmDnJMNeHSV7ICRvHQ8x_CDA'
+headers={'Authorization':f'Bearer {MATON_API_KEY}','Content-Type':'application/json'}
+url=f'https://gateway.maton.ai/google-sheets/v4/spreadsheets/{spreadsheet_id}/values/events_log'
+resp=requests.get(url,headers=headers,params={'majorDimension':'ROWS'})
+resp.raise_for_status()
+values=resp.json().get('values',[])
+count=sum(1 for row in values[1:] if row[6]=='followup_send')
+print('followup_send events',count)
+for row in values[-20:]:
+    if row[6]=='followup_send':
+        print(row)
